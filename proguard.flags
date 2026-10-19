@@ -1,0 +1,5 @@
+-keep class com.miku.android.launcher.MikuHome {
+  *;
+}
+
+-keep class com.miku.android.launcher.** { *; }
