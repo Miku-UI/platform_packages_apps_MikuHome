@@ -16,8 +16,21 @@
 
 package com.miku.android.launcher;
 
+import android.view.View;
+
+import com.android.launcher3.dragndrop.DragView;
 import com.android.launcher3.uioverrides.QuickstepLauncher;
 
 /** Launcher activity for the MikuHome variant. */
 public class MikuHome extends QuickstepLauncher {
+
+    @Override
+    public void onWorkspaceItemRemoving(View view) {
+        IconShatterOverlay.shatterItem(this, view);
+    }
+
+    @Override
+    public boolean animateDragViewRemoval(DragView dragView, Runnable endCallback) {
+        return IconShatterOverlay.shatterDragView(this, dragView, endCallback);
+    }
 }
