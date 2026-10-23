@@ -22,6 +22,7 @@ import android.animation.ValueAnimator;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Picture;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.view.HapticFeedbackConstants;
@@ -135,14 +136,11 @@ final class IconShatterOverlay extends View {
         if (width < MIN_SIZE_PX || height < MIN_SIZE_PX) {
             return null;
         }
-        Bitmap full;
-        try {
-            full = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        } catch (OutOfMemoryError e) {
+        // A software canvas rejects the hardware shadow bitmap a scaled glyph draws.
+        Bitmap full = capture(view, width, height);
+        if (full == null) {
             return null;
         }
-        Canvas canvas = new Canvas(full);
-        view.draw(canvas);
 
         Rect local = new Rect();
         if (view instanceof DraggableView dv
@@ -175,6 +173,25 @@ final class IconShatterOverlay extends View {
             return null;
         }
         return new Snapshot(icon, bounds);
+    }
+
+    /** Draws {@code view} into a software bitmap. Recording accepts hardware icon bitmaps. */
+    private static Bitmap capture(View view, int width, int height) {
+        Bitmap recorded;
+        try {
+            Picture picture = new Picture();
+            view.draw(picture.beginRecording(width, height));
+            picture.endRecording();
+            recorded = Bitmap.createBitmap(picture);
+        } catch (RuntimeException | OutOfMemoryError e) {
+            return null;
+        }
+        if (recorded.getConfig() != Bitmap.Config.HARDWARE) {
+            return recorded;
+        }
+        Bitmap software = recorded.copy(Bitmap.Config.ARGB_8888, false);
+        recorded.recycle();
+        return software;
     }
 
     private static void play(Launcher launcher, Snapshot snapshot, Runnable endCallback) {
